@@ -6,16 +6,15 @@ import {
   makeStyles,
   Paper,
   Fab,
-  Snackbar,
   CssBaseline,
   Box,
   Grid
 } from "@material-ui/core";
 import ReactJson from "react-json-view";
 import ExpandLessIcon from "@material-ui/icons/ExpandLess";
-import AddIcon from "@material-ui/icons/Add";
-import { Alert } from "@material-ui/lab";
-import PropertyNameAutoComplete from "./PropertyNameAutoComplete";
+import PublishIcon from "@material-ui/icons/Publish";
+import RenderValidationError from "./RenderValidationError";
+import validator from "./validator";
 import "typeface-roboto";
 
 const useStyle = makeStyles(theme => ({
@@ -69,18 +68,17 @@ const useStyle = makeStyles(theme => ({
     display: "block",
     fontSize: 11,
     color: theme.palette.text.secondary
+  },
+  errorContainer: {
+    width: "100%",
+    marginTop: theme.spacing(3)
   }
 }));
 
-const options = [
-  { id: 1, propertyName: "labels", type: "object" },
-  { id: 2, propertyName: "cache_from", type: "array" }
-];
-
 const defaultComposeSkeleton = {
-  environments: {},
+  environment: 1,
   command: [],
-  configs: {}
+  configs: []
 };
 
 function App() {
@@ -88,26 +86,30 @@ function App() {
   const [dockerComposeYaml, setDockerComposeYaml] = useState(
     defaultComposeSkeleton
   );
-  const [isSnackBarOpen, setIsSnackBarOpen] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [propertyName, setPropertyName] = useState(options[0]);
-  const [isFieldRendered, setIsFieldRendered] = useState(false);
+  const [validationMessages, setValidationMessages] = useState([]);
 
-  const handlePropertyAdd = () => {
-    setIsFieldRendered(false);
-    console.log(`User requests to add: ${propertyName}`);
-  };
-  const onEdit = _ => {
-    console.log("User wanted to add some value");
-    return {};
+  const onEdit = payload => {
+    console.log(payload);
+    setDockerComposeYaml(payload.updated_src);
+    setValidationMessages([]);
   };
 
-  const onDelete = _ => {
-    console.log("User wanted to add some value");
-    return {};
+  const onDelete = payload => {
+    console.log(payload);
+    setDockerComposeYaml(payload.updated_src);
+    setValidationMessages([]);
   };
 
-  const handlePropertyAdd = 
+  const onAdd = payload => {
+    console.log(payload);
+    setDockerComposeYaml(payload.updated_src);
+    setValidationMessages([]);
+  };
+
+  const validateAndSubmit = () => {
+    const dockerComposeYamlWrapped = { "project-db11234": dockerComposeYaml };
+    setValidationMessages(validator(dockerComposeYamlWrapped));
+  };
 
   return (
     <>
@@ -141,10 +143,7 @@ function App() {
             <div className={classes.tree}>
               <ReactJson
                 src={dockerComposeYaml}
-                onAdd={e => {
-                  console.log(e);
-                  return true;
-                }}
+                onAdd={onAdd}
                 onDelete={onDelete}
                 onEdit={onEdit}
                 name="project-db11234"
@@ -154,38 +153,18 @@ function App() {
               size="small"
               color="primary"
               className={classes.addJSONProp}
-              onClick={() => setIsFieldRendered(!isFieldRendered)}
+              onClick={validateAndSubmit}
             >
-              <AddIcon />
+              <PublishIcon />
             </Fab>
-            <Fab
-              size="small"
-              color="primary"
-              className={classes.addJSONProp}
-              onClick={validAndSubmit}
-            />
-            {isFieldRendered && (
-              <div className={classes.configSelectorContainer}>
-                <Paper elevation={3} className={classes.configSelectorWrapper}>
-                  <PropertyNameAutoComplete
-                    propertyName={propertyName}
-                    handlePropertyAdd={handlePropertyAdd}
-                    getOptionLabel={option => option.propertyName}
-                  />
-                </Paper>
-              </div>
-            )}
+          </Grid>
+          <Grid item className={classes.errorContainer}>
+            {<RenderValidationError validationErrors={validationMessages} />}
           </Grid>
         </Grid>
       </Container>
-      <Snackbar open={isSnackBarOpen} autoHideDuration={6000}>
-        <Alert severity="error">{errorMessage}</Alert>
-      </Snackbar>
     </>
   );
 }
 
-export default App;
-
-export default App;
 export default App;
