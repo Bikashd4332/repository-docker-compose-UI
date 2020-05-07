@@ -14,7 +14,7 @@ import ReactJson from "react-json-view";
 import ExpandLessIcon from "@material-ui/icons/ExpandLess";
 import PublishIcon from "@material-ui/icons/Publish";
 import RenderValidationError from "./RenderValidationError";
-import validator from "./validator";
+import { validator, emptyValidator } from "./validator";
 import "typeface-roboto";
 
 const useStyle = makeStyles(theme => ({
@@ -28,7 +28,8 @@ const useStyle = makeStyles(theme => ({
   },
   jsonTreeRoot: {
     position: "relative",
-    width: "100%"
+    width: "100%",
+    height: 400
   },
   header: {
     padding: theme.spacing(1, 4, 1),
@@ -76,15 +77,18 @@ const useStyle = makeStyles(theme => ({
 }));
 
 const defaultComposeSkeleton = {
-  environment: 1,
+  environment: [],
   command: [],
   configs: []
 };
 
-function App() {
+function App({
+  projectName = "project-db11234",
+  dockerComposeYamlDefault = defaultComposeSkeleton
+}) {
   const classes = useStyle();
   const [dockerComposeYaml, setDockerComposeYaml] = useState(
-    defaultComposeSkeleton
+    dockerComposeYamlDefault
   );
   const [validationMessages, setValidationMessages] = useState([]);
 
@@ -107,8 +111,16 @@ function App() {
   };
 
   const validateAndSubmit = () => {
-    const dockerComposeYamlWrapped = { "project-db11234": dockerComposeYaml };
-    setValidationMessages(validator(dockerComposeYamlWrapped));
+    const dockerComposeYamlWrapped = { [projectName]: dockerComposeYaml };
+    // validation for valid docker compose structur.
+    const messages = validator(dockerComposeYamlWrapped);
+    // check if any property is empty
+    const emptyValidation = [].concat.apply(
+      [],
+      emptyValidator(dockerComposeYamlWrapped, "project-db11234")
+    );
+    messages.length === 0 && messages.push(...emptyValidation);
+    setValidationMessages(messages);
   };
 
   return (
@@ -146,7 +158,7 @@ function App() {
                 onAdd={onAdd}
                 onDelete={onDelete}
                 onEdit={onEdit}
-                name="project-db11234"
+                name={projectName}
               />
             </div>
             <Fab
@@ -159,7 +171,9 @@ function App() {
             </Fab>
           </Grid>
           <Grid item className={classes.errorContainer}>
-            {<RenderValidationError validationErrors={validationMessages} />}
+            {validationMessages.length > 0 && (
+              <RenderValidationError validationErrors={validationMessages} />
+            )}
           </Grid>
         </Grid>
       </Container>
