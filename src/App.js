@@ -13,8 +13,10 @@ import {
 import ReactJson from "react-json-view";
 import ExpandLessIcon from "@material-ui/icons/ExpandLess";
 import PublishIcon from "@material-ui/icons/Publish";
+import DownloadIcon from "@material-ui/icons/GetApp";
 import RenderValidationError from "./RenderValidationError";
 import { validator, emptyValidator } from "./validator";
+import YAML from "json2yaml";
 import "typeface-roboto";
 
 const useStyle = makeStyles(theme => ({
@@ -23,11 +25,11 @@ const useStyle = makeStyles(theme => ({
     width: "100%"
   },
   container: {
-    width: "auto",
     alignItems: "center"
   },
   jsonTreeRoot: {
     position: "relative",
+    overflow: "scroll",
     width: "100%",
     height: 400
   },
@@ -43,43 +45,25 @@ const useStyle = makeStyles(theme => ({
     bottom: theme.spacing(2),
     right: theme.spacing(2)
   },
-  configSelectorContainer: {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-    top: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)"
-  },
-  configSelectorWrapper: {
-    width: "50%",
-    padding: 10,
-    left: "50%",
-    top: "50%",
-    right: "50%",
-    transform: "translate(-50%, -50%)",
-    position: "absolute",
-    zIndex: 300
-  },
-  optionLabel: {
-    width: "100%",
-    display: "block"
-  },
-  optionDescription: {
-    width: "100%",
-    display: "block",
-    fontSize: 11,
-    color: theme.palette.text.secondary
-  },
   errorContainer: {
     width: "100%",
     marginTop: theme.spacing(3)
+  },
+  exportFab: {
+    position: "absolute",
+    bottom: theme.spacing(2),
+    right: theme.spacing(9)
   }
 }));
 
 const defaultComposeSkeleton = {
-  environment: [],
-  command: [],
-  configs: []
+  configs: ["PATH:/var/app/bin"],
+  build: {
+    context: ".",
+    dockerfile: "docker/development/Dockerfile"
+  },
+  env_file: "docker/development/.env",
+  ports: ["3000:80"]
 };
 
 function App({
@@ -110,7 +94,7 @@ function App({
     setValidationMessages([]);
   };
 
-  const validateAndSubmit = () => {
+  const validate = () => {
     const dockerComposeYamlWrapped = { [projectName]: dockerComposeYaml };
     // validation for valid docker compose structur.
     const messages = validator(dockerComposeYamlWrapped);
@@ -121,6 +105,25 @@ function App({
     );
     messages.length === 0 && messages.push(...emptyValidation);
     setValidationMessages(messages);
+  };
+
+  const validateAndSubmit = () => {
+    validate();
+    const isValid = validationMessages.length === 0;
+    if (isValid) {
+      console.log("YAML pushed");
+    } else {
+      console.log("There are errors");
+    }
+  };
+
+  const validateAndExport = () => {
+    const dockerComposeYamlWrapped = { [projectName]: dockerComposeYaml };
+    validate();
+    const isValid = validationMessages.length === 0;
+    if (isValid) {
+      console.log(YAML.stringify(dockerComposeYamlWrapped));
+    }
   };
 
   return (
@@ -168,6 +171,14 @@ function App({
               onClick={validateAndSubmit}
             >
               <PublishIcon />
+            </Fab>
+            <Fab
+              size="small"
+              color="primary"
+              className={classes.exportFab}
+              onClick={validateAndExport}
+            >
+              <DownloadIcon />
             </Fab>
           </Grid>
           <Grid item className={classes.errorContainer}>

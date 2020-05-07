@@ -1,14 +1,22 @@
 import Ajv from "ajv";
 import DockerComposeSchema from "./config_definition";
 
+/*
+ * The docker compose constructed json will be validated against their
+ * own json scchema for accordance.
+ * @param dataToValidate {} - The data to validate against the schema.
+ * @returnss Arryay[Validations]
+ */
 const validator = dataToValidate => {
-  const ajv = new Ajv({ schemaId: "id", unknownFormats: false, format: false });
-  ajv.addMetaSchema(require("ajv/lib/refs/json-schema-draft-04.json"));
-  let validate = ajv.compile(DockerComposeSchema);
-  if (!validate(dataToValidate)) {
-    return validate.errors;
-  }
-  return [];
+  // ajv should not throw errors on encoutering format
+  // that it does not know.
+  const ajv = new Ajv({
+    schemaId: "id",
+    unknownFormats: false,
+    format: false
+  }).addMetaSchema(require("ajv/lib/refs/json-schema-draft-04.json"));
+  const validate = ajv.compile(DockerComposeSchema);
+  return !validate(dataToValidate) ? validate.errors : [];
 };
 
 /*
@@ -26,17 +34,23 @@ const emptyValidator = (dataToValidate, namespace) => {
     case "array":
       // If its an array and it has no items then .
       if (value.length === 0) {
-        return `${readableNamespace(namespace)} can not have none propert.`;
+        return `${readableNamespace(namespace)} can not have none items.`;
       }
-      value.forEach((item, index) => {
+      value.forEach((_, index) => {
         const validationMessage = emptyValidator(
           dataToValidate,
           namespace + `/${index}}`
         );
         validationMessage && validationMessage.push(validationMessage);
       });
-      return validationMessages;
+      return [].concat.apply([], validationMessages);
     case "object":
+      if (value === null) {
+        return `${readableNamespace(
+          namespace
+        )} can not have null or undefined.`;
+      }
+
       const keys = Object.keys(value);
       // If its an object and it has none keys.
       if (keys.length === 0) {
@@ -49,11 +63,15 @@ const emptyValidator = (dataToValidate, namespace) => {
         );
         validationMessage && validationMessages.push(validationMessage);
       });
-      return validationMessages;
+      return [].concat.apply([], validationMessages);
     case "string":
       return value === ""
         ? `${readableNamespace(namespace)} can not contain empty string.`
         : undefined;
+    default:
+      return `${readableNamespace(
+        namespace
+      )} can not contain null or undefined.`;
   }
 };
 
