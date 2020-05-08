@@ -12,6 +12,7 @@ const validator = dataToValidate => {
   // that it does not know.
   const ajv = new Ajv({
     schemaId: "id",
+    allErrors: true,
     unknownFormats: false,
     format: false
   }).addMetaSchema(require("ajv/lib/refs/json-schema-draft-04.json"));
