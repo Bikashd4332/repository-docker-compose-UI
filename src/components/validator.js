@@ -1,5 +1,19 @@
 import Ajv from "ajv";
-import DockerComposeSchema from "./config_definition";
+import DockerComposeSchema from "../schema/schema.json";
+const ajv = new Ajv({
+  meta: false,
+  schemaId: "id",
+  allErrors: true,
+  unknownFormats: 'ignore',
+  extendRefs: true
+})
+const metaSchema = require('ajv/lib/refs/json-schema-draft-04.json')
+ajv.addMetaSchema(metaSchema)
+ajv._opts.defaultMeta = metaSchema.id
+ajv._refs['http://json-schema.org/schema'] =
+  'http://json-schema.org/draft-04/schema'
+
+ajv.addFormat("duration", /^P(\d+Y)?(\d+M)?(\d+W)?(\d+D)?(T(\d+H)?(\d+M)?(\d+S)?)?$/)
 
 /*
  * The docker compose constructed json will be validated against their
@@ -8,15 +22,7 @@ import DockerComposeSchema from "./config_definition";
  * @returnss Arryay[Validations]
  */
 const validator = dataToValidate => {
-  // ajv should not throw errors on encoutering format
-  // that it does not know.
-  const ajv = new Ajv({
-    schemaId: "id",
-    allErrors: true,
-    unknownFormats: false,
-    format: false
-  }).addMetaSchema(require("ajv/lib/refs/json-schema-draft-04.json"));
-  const validate = ajv.compile(DockerComposeSchema);
+  const validate = ajv.compile(DockerComposeSchema[3]); //[3] => version 3
   return !validate(dataToValidate) ? validate.errors : [];
 };
 

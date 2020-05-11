@@ -14,10 +14,11 @@ import ReactJson from "react-json-view";
 import ExpandLessIcon from "@material-ui/icons/ExpandLess";
 import PublishIcon from "@material-ui/icons/Publish";
 import DownloadIcon from "@material-ui/icons/GetApp";
-import RenderValidationError from "./RenderValidationError";
-import { validator, emptyValidator } from "./validator";
+import RenderValidationError from "./components/RenderValidationError";
+import { validator, emptyValidator } from "./components/validator";
 import YAML from "json2yaml";
 import "typeface-roboto";
+import testSchema from './schema/testSchema.json'
 
 const useStyle = makeStyles(theme => ({
   root: {
@@ -68,7 +69,7 @@ const defaultComposeSkeleton = {
 
 function App({
   projectName = "project-db11234",
-  dockerComposeYamlDefault = defaultComposeSkeleton
+  dockerComposeYamlDefault = testSchema[0]
 }) {
   const classes = useStyle();
   const [dockerComposeYaml, setDockerComposeYaml] = useState(
@@ -95,15 +96,15 @@ function App({
   };
 
   const validate = () => {
-    const dockerComposeYamlWrapped = { [projectName]: dockerComposeYaml };
+    const dockerComposeYamlWrapped = { ...dockerComposeYaml };
     // validation for valid docker compose structur.
     const messages = validator(dockerComposeYamlWrapped);
     // check if any property is empty
-    const emptyValidation = [].concat.apply(
-      [],
-      emptyValidator(dockerComposeYamlWrapped, "project-db11234")
-    );
-    messages.length === 0 && messages.push(...emptyValidation);
+    // const emptyValidation = [].concat.apply(
+    //   [],
+    //   emptyValidator(dockerComposeYamlWrapped, "project-db11234")
+    // );
+    // messages.length === 0 && messages.push(...emptyValidation);
     setValidationMessages(messages);
   };
 
@@ -162,6 +163,8 @@ function App({
                 onDelete={onDelete}
                 onEdit={onEdit}
                 name={projectName}
+                displayDataTypes={false}
+                displayObjectSize={false}
               />
             </div>
             <Fab

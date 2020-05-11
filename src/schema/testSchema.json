@@ -1,0 +1,176 @@
+[
+  {
+    "version": "3.4",
+    "services": {
+      "ohl_proxy": {
+        "container_name": "ohl_proxy",
+        "build": {
+          "context": ".",
+          "dockerfile": "./ohl_proxy/Dockerfile"
+        },
+        "image": "ohl_proxy",
+        "stdin_open": true,
+        "tty": true,
+        "depends_on": ["ohl_api", "ohl_ui"],
+        "volumes": ["/var/run/docker.sock:/tmp/docker.sock:ro"],
+        "ports": ["80:80"],
+        "networks": {
+          "ohl-network": {
+            "aliases": ["ohl-proxy"]
+          }
+        }
+      },
+      "ohl_db": {
+        "image": "mysql:5.7",
+        "restart": "always",
+        "volumes": ["../ohl_db:/var/lib/mysql"],
+        "environment": {
+          "MYSQL_ROOT_PASSWORD": "password",
+          "MYSQL_DATABASE": "ohldb",
+          "MYSQL_USER": "riddhi",
+          "MYSQL_PASSWORD": "password"
+        },
+        "networks": {
+          "ohl-network": {
+            "aliases": ["ohl_db"]
+          }
+        }
+      },
+      "ohl_api": {
+        "container_name": "ohl_api",
+        "build": {
+          "context": "./../",
+          "dockerfile": "./ohl_docker/ohl_api/Dockerfile"
+        },
+        "command": "bash -c \"rm -f tmp/pids/server.pid && bundle exec rails s -p 9000 -b '0.0.0.0'\"",
+        "image": "ohl_api",
+        "stdin_open": true,
+        "tty": true,
+        "volumes": ["../ohl_api:/var/www/ohl/ohl_api"],
+        "depends_on": ["ohl_db"],
+        "ports": ["9000:9000"],
+        "environment": {
+          "VIRTUAL_HOST": "ohl.api.localhost",
+          "VIRTUAL_PORT": 9000,
+          "DB_NAME": "ohldb",
+          "DB_USER": "riddhi",
+          "DB_PASSWORD": "password",
+          "DB_HOST": "ohl_db"
+        },
+        "networks": {
+          "ohl-network": {
+            "aliases": ["ohl-api"]
+          }
+        }
+      },
+      "ohl_ui": {
+        "container_name": "ohl_ui",
+        "build": {
+          "context": "./../",
+          "dockerfile": "./ohl_docker/ohl_ui/Dockerfile"
+        },
+        "image": "ohl_ui",
+        "volumes": ["../ohl_ui:/var/www/ohl/ohl_ui"],
+        "ports": ["8080:8080"],
+        "environment": {
+          "VIRTUAL_HOST": "ohl.ui.localhost"
+        },
+        "networks": {
+          "ohl-network": {
+            "aliases": ["ohl-ui"]
+          }
+        }
+      }
+    },
+    "networks": {
+      "ohl-network": null
+    }
+  },
+  {
+    "version": "1",
+    "services": {
+      "ohl_proxy": {
+        "container_name": "ohl_proxy",
+        "build": {
+          "context": ".",
+          "dockerfile": "./ohl_proxy/Dockerfile"
+        },
+        "image": "ohl_proxy",
+        "stdin_open": true,
+        "tty": true,
+        "depends_on": ["ohl_api", "ohl_ui"],
+        "volumes": ["/var/run/docker.sock:/tmp/docker.sock:ro"],
+        "ports": ["80:80"],
+        "networks": {
+          "ohl-network": {
+            "aliases": ["ohl-proxy"]
+          }
+        }
+      },
+      "ohl_db": {
+        "image": "mysql:5.7",
+        "restart": "always",
+        "volumes": ["../ohl_db:/var/lib/mysql"],
+        "environment": {
+          "MYSQL_ROOT_PASSWORD": "password",
+          "MYSQL_DATABASE": "ohldb",
+          "MYSQL_USER": "riddhi",
+          "MYSQL_PASSWORD": "password"
+        },
+        "networks": {
+          "ohl-network": {
+            "aliases": ["ohl_db"]
+          }
+        }
+      },
+      "ohl_api": {
+        "container_name": "ohl_api",
+        "build": {
+          "context": "./../",
+          "dockerfile": "./ohl_docker/ohl_api/Dockerfile"
+        },
+        "command": "bash -c \"rm -f tmp/pids/server.pid && bundle exec rails s -p 9000 -b '0.0.0.0'\"",
+        "image": "ohl_api",
+        "stdin_open": true,
+        "tty": true,
+        "volumes": ["../ohl_api:/var/www/ohl/ohl_api"],
+        "depends_on": ["ohl_db"],
+        "ports": ["9000:9000"],
+        "environment": {
+          "VIRTUAL_HOST": "ohl.api.localhost",
+          "VIRTUAL_PORT": 9000,
+          "DB_NAME": "ohldb",
+          "DB_USER": "riddhi",
+          "DB_PASSWORD": "password",
+          "DB_HOST": "ohl_db"
+        },
+        "networks": {
+          "ohl-network": {
+            "aliases": ["ohl-api"]
+          }
+        }
+      },
+      "ohl_ui": {
+        "container_name": "ohl_ui",
+        "build": {
+          "context": "./../",
+          "dockerfile": "./ohl_docker/ohl_ui/Dockerfile"
+        },
+        "image": "ohl_ui",
+        "volumes": ["../ohl_ui:/var/www/ohl/ohl_ui"],
+        "ports": ["8080:8080"],
+        "environment": {
+          "VIRTUAL_HOST": "ohl.ui.localhost"
+        },
+        "networks": {
+          "ohl-network": {
+            "aliases": ["ohl-ui"]
+          }
+        }
+      }
+    },
+    "networks": {
+      "ohl-network": null
+    }
+  }
+]
