@@ -20,18 +20,21 @@ import YAML from "json2yaml";
 import "typeface-roboto";
 
 const useStyle = makeStyles(theme => ({
+  container: {
+    alignItems: "center"
+  },
   root: {
     padding: theme.spacing(3),
     width: "100%"
   },
-  container: {
-    alignItems: "center"
-  },
   jsonTreeRoot: {
-    position: "relative",
     overflow: "scroll",
     width: "100%",
     height: 400
+  },
+  jsonTreeWrapper: {
+    width: "100%",
+    position: "relative"
   },
   header: {
     padding: theme.spacing(1, 4, 1),
@@ -42,8 +45,8 @@ const useStyle = makeStyles(theme => ({
   },
   addJSONProp: {
     position: "absolute",
-    bottom: theme.spacing(2),
-    right: theme.spacing(2)
+    bottom: theme.spacing(5),
+    right: theme.spacing(5)
   },
   errorContainer: {
     width: "100%",
@@ -51,8 +54,8 @@ const useStyle = makeStyles(theme => ({
   },
   exportFab: {
     position: "absolute",
-    bottom: theme.spacing(2),
-    right: theme.spacing(9)
+    bottom: theme.spacing(5),
+    right: theme.spacing(12)
   }
 }));
 
@@ -63,12 +66,13 @@ const defaultComposeSkeleton = {
     dockerfile: "docker/development/Dockerfile"
   },
   env_file: "docker/development/.env",
-  ports: ["3000:80"]
+  ports: ["3000:,80"]
 };
 
 function App({
   projectName = "project-db11234",
-  dockerComposeYamlDefault = defaultComposeSkeleton
+  dockerComposeYamlDefault = defaultComposeSkeleton,
+  composeVersion = 3
 }) {
   const classes = useStyle();
   const [dockerComposeYaml, setDockerComposeYaml] = useState(
@@ -77,9 +81,9 @@ function App({
   const [validationMessages, setValidationMessages] = useState([]);
 
   const onEdit = payload => {
-    console.log(payload);
+    // Should always validate with the choosen schema
     setDockerComposeYaml(payload.updated_src);
-    setValidationMessages([]);
+    validate(payload.updated_src);
   };
 
   const onDelete = payload => {
@@ -89,7 +93,19 @@ function App({
   };
 
   const onAdd = payload => {
-    console.log(payload);
+    // should check that there is no existing property exists which has
+    // null stored in it.
+    const emptyValidation = [].concat.apply(
+      [],
+      emptyValidator({ [projectName]: dockerComposeYaml }, projectName)
+    );
+    if (emptyValidation && emptyValidation.length) {
+      setValidationMessages(emptyValidation);
+      // we can cannot accept new changes.
+      const duped = JSON.parse(JSON.stringify(dockerComposeYaml));
+      setDockerComposeYaml(duped);
+      return false;
+    }
     setDockerComposeYaml(payload.updated_src);
     setValidationMessages([]);
   };
@@ -97,13 +113,8 @@ function App({
   const validate = () => {
     const dockerComposeYamlWrapped = { [projectName]: dockerComposeYaml };
     // validation for valid docker compose structur.
-    const messages = validator(dockerComposeYamlWrapped);
-    // check if any property is empty
-    const emptyValidation = [].concat.apply(
-      [],
-      emptyValidator(dockerComposeYamlWrapped, "project-db11234")
-    );
-    messages.length === 0 && messages.push(...emptyValidation);
+    // against the given version.
+    const messages = validator(dockerComposeYamlWrapped, composeVersion);
     setValidationMessages(messages);
   };
 
@@ -136,50 +147,53 @@ function App({
           alignItems="center"
           justify="center"
         >
-          <Grid
-            item
-            component={Paper}
-            className={classes.jsonTreeRoot}
-            elevation={3}
-          >
+          <Grid item class={classes.jsonTreeWrapper}>
             <Grid
-              container
-              component={Box}
-              justify="space-between"
-              className={classes.header}
+              item
+              component={Paper}
+              className={classes.jsonTreeRoot}
+              elevation={3}
             >
-              <Typography variant="body1" component="h1">
-                Docker-compose YAML
-              </Typography>
-              <IconButton color="default" size="small">
-                <ExpandLessIcon />
-              </IconButton>
+              <Grid
+                container
+                component={Box}
+                justify="space-between"
+                className={classes.header}
+              >
+                <Typography variant="body1" component="h1">
+                  Docker-compose YAML
+                </Typography>
+                <IconButton color="default" size="small">
+                  <ExpandLessIcon />
+                </IconButton>
+              </Grid>
+              <div className={classes.tree}>
+                <ReactJson
+                  src={dockerComposeYaml}
+                  onAdd={onAdd}
+                  validationMessage="Please verify that no tags should have empty values."
+                  onDelete={onDelete}
+                  onEdit={onEdit}
+                  name={projectName}
+                />
+              </div>
+              <Fab
+                size="small"
+                color="primary"
+                className={classes.addJSONProp}
+                onClick={validateAndSubmit}
+              >
+                <PublishIcon />
+              </Fab>
+              <Fab
+                size="small"
+                color="primary"
+                className={classes.exportFab}
+                onClick={validateAndExport}
+              >
+                <DownloadIcon />
+              </Fab>
             </Grid>
-            <div className={classes.tree}>
-              <ReactJson
-                src={dockerComposeYaml}
-                onAdd={onAdd}
-                onDelete={onDelete}
-                onEdit={onEdit}
-                name={projectName}
-              />
-            </div>
-            <Fab
-              size="small"
-              color="primary"
-              className={classes.addJSONProp}
-              onClick={validateAndSubmit}
-            >
-              <PublishIcon />
-            </Fab>
-            <Fab
-              size="small"
-              color="primary"
-              className={classes.exportFab}
-              onClick={validateAndExport}
-            >
-              <DownloadIcon />
-            </Fab>
           </Grid>
           <Grid item className={classes.errorContainer}>
             {validationMessages.length > 0 && (

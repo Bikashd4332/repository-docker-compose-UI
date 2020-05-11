@@ -1,5 +1,7 @@
 import Ajv from "ajv";
-import DockerComposeSchema from "./config_definition";
+import schema_v1 from "./config_definition_v1.0";
+import schema_v2 from "./config_definition_v2.4";
+import schema_v3 from "./config_definition_v3.8";
 
 /*
  * The docker compose constructed json will be validated against their
@@ -7,7 +9,15 @@ import DockerComposeSchema from "./config_definition";
  * @param dataToValidate {} - The data to validate against the schema.
  * @returnss Arryay[Validations]
  */
-const validator = dataToValidate => {
+const validator = (dataToValidate, composeVersion) => {
+  // find out which schema is specified to validate json data with.
+  let schemaVer =
+    composeVersion === 1
+      ? schema_v1
+      : composeVersion > 2 && composeVersion <= 2.4
+      ? schema_v2
+      : schema_v3;
+
   // ajv should not throw errors on encoutering format
   // that it does not know.
   const ajv = new Ajv({
@@ -16,7 +26,9 @@ const validator = dataToValidate => {
     unknownFormats: false,
     format: false
   }).addMetaSchema(require("ajv/lib/refs/json-schema-draft-04.json"));
-  const validate = ajv.compile(DockerComposeSchema);
+  // check which schema is provided and load that appropriate schema
+
+  const validate = ajv.compile(schemaVer);
   return !validate(dataToValidate) ? validate.errors : [];
 };
 

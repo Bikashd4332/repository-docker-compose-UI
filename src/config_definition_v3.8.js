@@ -1,6 +1,6 @@
 const schema = {
   $schema: "http://json-schema.org/draft-04/schema#",
-  id: "config_schema_v3.8.json",
+  id: "3.8",
   type: "object",
   patternProperties: {
     "^[a-zA-Z0-9._-]+$": {
